@@ -436,7 +436,7 @@ int main(int argc, char *argv[]) {
 			space_count++;
 		}
 		
-		cout << "{\"data\" : \""<<text.substr(0, text.length() - 4)<<"\"}";
+		cout << "{\"data\" : \""<<text.substr(0, text.length() - space_count)<<"\"}";
 	}
 	else {
 		cerr << "{\"err\" : true, \"msg\" : \"invalid command\"}";
