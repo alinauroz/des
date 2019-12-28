@@ -346,16 +346,101 @@ string decrypt(string cipher, string key){
 	return pt;
 }
 
+string string_to_hex(const std::string& input)
+{
+    static const char* const lut = "0123456789ABCDEF";
+    size_t len = input.length();
+
+    std::string output;
+    output.reserve(2 * len);
+    for (size_t i = 0; i < len; ++i)
+    {
+        const unsigned char c = input[i];
+        output.push_back(lut[c >> 4]);
+        output.push_back(lut[c & 15]);
+    }
+    return output;
+}
+
+string hex_to_string(string& input)
+{
+    static const char* const lut = "0123456789ABCDEF";
+    size_t len = input.length();
+    if (len & 1) throw invalid_argument("odd length");
+
+	string output;
+    output.reserve(len / 2);
+    for (size_t i = 0; i < len; i += 2)
+    {
+        char a = input[i];
+        const char* p = lower_bound(lut, lut + 16, a);
+        if (*p != a) throw invalid_argument("not a hex digit");
+
+        char b = input[i + 1];
+        const char* q = lower_bound(lut, lut + 16, b);
+        if (*q != b) throw invalid_argument("not a hex digit");
+
+        output.push_back(((p - lut) << 4) | (q - lut));
+    }
+    return output;
+}
+
 string key = "AABB09182736CCDD";
 
 int main(int argc, char *argv[]) {
+	
 	if (argc < 2) {
 		cerr << "{\"err\" : true, \"msg\" : \"no input and command provided\"}";
+		return 1;
 	}
 	else if (argc < 3) {
 		cerr << "{\"err\" : true, \"msg\" : \"no input or command provided\"}";
+		return 1;
 	}
 	
-	
+	if (strcmp(argv[1], "encrypt") == 0) {
+		string text = argv[2];
+		string cipher = "";
+		string hex_text = "";
+		
+		while(text.length()%8 != 0) {
+			text += " ";
+		}
+		
+		hex_text = string_to_hex(text);
+		
+		for (int i = 0; i < hex_text.length(); i+=16) {
+			cipher += encrypt(hex_text.substr(i, 16), key);
+		}
+		
+		cout << "{\"data\" : \""<<cipher<<"\"}";
+		
+	}
+	else if (strcmp(argv[1], "decrypt") == 0) {
+		int space_count = 0;
+		string cipher = argv[2];
+		string text = "";
+		
+		while(text.length()%16 != 0) {
+			text += " ";
+		}
+		
+		for (int i = 0; i < cipher.length(); i+=16) {
+			text += decrypt(cipher.substr(i, 16), key);
+		}
+		
+		text = hex_to_string(text);
+		for (int i = text.length() - 1; i >= 0; i--) {
+			if (text[i] != ' ')
+				break;
+			space_count++;
+		}
+		
+		cout << "{\"data\" : \""<<text.substr(0, text.length() - 4)<<"\"}";
+	}
+	else {
+		cerr << "{\"err\" : true, \"msg\" : \"invalid command\"}";
+		return 1;
+	}
 	
 }
